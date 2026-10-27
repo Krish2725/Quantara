@@ -1,115 +1,35 @@
-# Quantara — Project Plan
+# Quantara — Current Scope and Roadmap
 
-## 1. Product Overview & Core Principle
+This document reflects the implementation in the repository as of 2026-10-27. The README and source code are the detailed setup and behavior references. Earlier concepts below are explicitly marked as not implemented.
 
-**Quantara** is a portfolio analytics and risk intelligence platform designed to evaluate investment portfolios with institutional-grade rigor. It is built to answer key investment questions:
-- How has the portfolio performed over time (absolute & risk-adjusted)?
-- Do returns justify the risk taken?
-- Which holdings drive portfolio gains, losses, and risk concentration?
-- How does the portfolio compare with benchmark indices (e.g., Nifty 50)?
-- How would the portfolio respond under historical stress events and hypothetical market shocks?
+## Product
 
-**Core Product Principle:** Quantara is an analytical intelligence engine, not a CRUD app, stock screener, or chatbot wrapper. All metrics are deterministic, transparent, and mathematically verifiable.
+Quantara is a browser-based, authenticated investment transaction tracker with portfolio valuation and historical risk analysis. It is intended for individual investors who want to review a long-only portfolio from recorded BUY/SELL transactions. It is descriptive software, not investment advice.
 
----
+## Implemented architecture and workflows
 
-## 2. System Architecture
+- **Frontend:** React 19, React Router, Vite and Tailwind CSS. Public landing, login/register, authenticated dashboard, Overview, Investments, Transactions, Risk Analysis, light/dark/system themes, and the shared Q brand mark.
+- **Backend:** Node.js and Express API. Session-based authentication, CSRF checks on mutations, auth/import rate limits, exact-origin credentialed CORS, Twelve Data adapter, ticker cache, and protected account portfolio endpoints.
+- **Persistence:** Mongoose user and portfolio models, MongoDB-backed sessions, and user-scoped portfolios. Transaction imports validate and persist as atomic, idempotent ledger batches.
+- **Analytics:** Shared pure-JavaScript package used by frontend/backend for ledger accounting, valuation, returns, volatility, Sharpe ratio, maximum drawdown, historical buy-and-hold comparison, and descriptive portfolio/holding scores. Methodology and assumptions are in `docs/ANALYTICS_METHODOLOGY.md`.
+- **Market data:** Twelve Data symbol search, quotes and split-adjusted daily history. Missing data remains unavailable. The dashboard's synthetic sample is explicitly labeled and separate from provider market data.
 
-Quantara is structured into decoupled, modular layers:
+## Accounting and data boundaries
 
-```
-┌────────────────────────────────────────────────────────┐
-│                   Quantara Frontend                    │
-│      React + Vite + Tailwind CSS + Recharts UI        │
-│    (Portfolio views, risk attribution, stress tests)   │
-└───────────────────────────┬────────────────────────────┘
-                            │ REST API / JSON
-┌───────────────────────────▼────────────────────────────┐
-│                   Quantara Backend                     │
-│                Node.js + Express API                   │
-│   (Auth, CSV ingestion, portfolio routes, persistence)  │
-└─────────────┬────────────────────────────┬─────────────┘
-              │                            │
-┌─────────────▼──────────────┐ ┌───────────▼─────────────┐
-│      MongoDB Atlas         │ │   @quantara/analytics   │
-│   User & portfolio state   │ │ Pure JS financial math  │
-│  (Mongoose schemas/models) │ │ (Zero external I/O deps)│
-└────────────────────────────┘ └─────────────────────────┘
-```
+The append-only BUY/SELL transaction ledger is the source of truth for holdings, weighted-average cost basis, and realized P/L. Buy fees are included in basis; sell fees reduce proceeds; overselling is rejected. Imported transaction CSV batches pass the same ledger rules. Historical market prices do not create trades or affect accounting. FX conversion, short positions, dividends, taxes, cash-flow accounting and transaction-weighted portfolio return are not implemented.
 
-### Module Responsibilities:
-1. **`@quantara/analytics` (Core Engine):**
-   - Independent, zero-dependency pure JavaScript calculation library.
-   - Handles return series, portfolio aggregation, volatility, drawdowns, risk-adjusted ratios (Sharpe, Sortino, Treynor), benchmark beta/alpha, and scenario stress testing.
-   - Comprehensive test suite with Vitest and hand-verified financial fixtures.
-2. **`backend/` (API & Persistence):**
-   - Node.js + Express REST API (`config/`, `controllers/`, `middlewares/`, `models/`, `routes/`, `services/`, `utils/`).
-   - Handles user authentication, portfolio management, CSV parsing/validation, benchmark historical data caching, and metric execution via `analytics`.
-   - MongoDB Atlas via Mongoose for user accounts, stored portfolios, and holding snapshots.
-3. **`frontend/` (Visual Intelligence Dashboard):**
-   - React + Vite + Tailwind CSS + Recharts single-page application.
-   - Dynamic charts powered by Recharts (drawdown underwater charts, cumulative return comparisons, asset allocation donuts, risk-return scatter plots).
-   - Responsive, high-density analytical dashboard with no mock/placeholder data.
+The market-data adapter uses a backend-only Twelve Data key. Provider access, history length, quote freshness and display entitlements depend on the account plan. No key or plan is assumed by this project.
 
----
+## Not implemented
 
-## 3. Product Modules
+The following ideas in the original proposal are not part of the current application: Sortino/downside risk, beta/alpha, tracking error/information ratio, benchmark provider ingestion, stress/scenario testing, forecast or recommendation features, and the originally proposed Recharts visualizations. Current charts and scores must not be described as implementing those features.
 
-| Module | Purpose | Status |
-| :--- | :--- | :--- |
-| **M1: Analytics Foundation** | Period returns, cumulative returns, portfolio weights, volatility, max drawdown, Sharpe ratio | In Progress (Milestone 1) |
-| **M2: Advanced Risk & Benchmarking** | Sortino ratio, Downside deviation, Benchmark Beta, Jensen's Alpha, Tracking error, Information ratio | Planned (Milestone 2) |
-| **M3: Data Ingestion & Models** | CSV import (NSE/BSE/Yahoo format), holdings validation, Mongoose models, price series storage | Planned (Milestone 3) |
-| **M4: Backend API Integration** | Express API endpoints (`/api/portfolios`, `/api/analytics`, `/api/benchmarks`) | Planned (Milestone 4) |
-| **M5: Analytics Dashboard (UI)** | Interactive dashboard with Recharts, risk cards, weight treemap/table, underwater drawdown chart | Planned (Milestone 5) |
-| **M6: Stress Testing & Scenarios** | Historical shocks (COVID crash March 2020, 2008 GFC, Rate Hike 2022) & custom factor shocks | Planned (Milestone 6) |
-| **M7: Explainability Layer** | Deterministic metric explanations with optional LLM narrative layer (strictly non-calculating) | Planned (Milestone 7) |
+Legacy user-supplied historical price CSV import is retired; old config fields may remain stored opaquely but are not used by charts or analytics. The supported CSV importer imports actual BUY/SELL transactions only. See the README for its schema and validation behavior.
 
----
+## Build, tests and local development
 
-## 4. Implementation Milestones
+Install from the repository root with `npm install`; copy `.env.example` to `backend/.env`, configure MongoDB and a backend-only session secret, and use `npm run dev:backend` plus `npm run dev:frontend`. `npm test` runs the analytics, backend and frontend suites. `npm --workspace=quantara-frontend run build` creates `frontend/dist`.
 
-### Milestone 1: Analytics Foundation (Current)
-- Establish monorepo structure with `@quantara/analytics`.
-- Implement core financial functions: simple returns, cumulative returns, portfolio value & weights, annualized volatility, max drawdown, Sharpe ratio.
-- Implement strict input validators, explicit annualization conventions, and error handling.
-- Write automated Vitest unit tests covering nominal, edge, and invalid cases with hand-verified fixtures.
-- Document analytics methodology in `docs/ANALYTICS_METHODOLOGY.md`.
+## Future work (not implemented)
 
-### Milestone 2: Risk Metrics & Benchmark Analytics
-- Add downside risk metrics (Sortino ratio, Semi-variance, Value-at-Risk / CVaR historical).
-- Add benchmark comparative analytics: Covariance, Beta ($\beta$), Alpha ($\alpha$), Tracking Error, and Information Ratio against Nifty 50.
-- Fixtures and test suite for benchmark analytics.
-
-### Milestone 3: Data Ingestion & Backend Core
-- Initialize Express server and MongoDB Mongoose schemas (`User`, `Portfolio`, `Holding`, `PriceHistory`).
-- Implement CSV parser for standard broker trade books / transaction histories and price series.
-- Ingestion data validation and reconciliation.
-
-### Milestone 4: Portfolio API Services
-- Express routes for portfolio CRUD, time-series calculation triggers, and caching.
-- Benchmark data seed service (Nifty 50 historical daily close).
-
-### Milestone 5: Web UI & Visual Analytics
-- Initialize React + Vite + Tailwind CSS frontend.
-- Build KPI cards (Total Value, Cumulative Return, Annualized Volatility, Max Drawdown, Sharpe Ratio).
-- Build interactive Recharts components: Portfolio vs Benchmark Growth, Underwater Drawdown Plot, Asset Allocation.
-
-### Milestone 6: Scenario Analysis & Stress Testing
-- Portfolio factor exposure engine (shocking specific asset classes or market beta).
-- Historical scenario replay (e.g., March 2020 Covid drawdown simulation).
-
----
-
-## 5. Acceptance Criteria (Milestone 1)
-
-1. **Precision & Correctness:**
-   - Calculations match independent hand-calculated mathematical benchmarks within $10^{-6}$ numerical tolerance.
-2. **Robust Validation:**
-   - Invalid prices ($\le 0$), empty series, mismatched dates, non-finite values, and zero denominators throw explicit errors rather than returning NaN or silent zeroes.
-3. **Explicit Conventions:**
-   - Return frequencies (daily = 252, weekly = 52, monthly = 12) and risk-free rates ($R_f$) are required or strictly typed parameters.
-4. **Zero Side-effects:**
-   - Calculations are deterministic, immutable, and have zero external runtime dependencies.
-5. **Full Test Coverage:**
-   - 100% of core functions covered by automated Vitest tests covering standard flow, boundary cases (single period, flat prices, bankruptcy), and invalid inputs.
+Potential future work includes selected advanced risk metrics, benchmark data integration, stress testing, and richer date-aligned portfolio analysis. Any such work requires its own verified methodology, tests, and clear product labels before it is represented as available.

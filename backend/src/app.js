@@ -40,6 +40,8 @@ export function createApp({ marketData = createMarketDataService(), portfolioSto
   const auth = createAuthController({ users });
   const authenticated = isAuthenticated({ users });
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: { code: 'RATE_LIMITED', message: 'Too many authentication attempts. Try again later.' } } });
+  const marketDataLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: { code: 'RATE_LIMITED', message: 'Too many market-data requests. Try again later.' } } });
+  app.use('/api/market-data', marketDataLimiter);
   const requireCsrf = (req, res, next) => req.session?.csrfToken && req.get('x-csrf-token') === req.session.csrfToken ? next() : res.status(403).json({ error: { code: 'CSRF_FAILED', message: 'Refresh the page and try again.' } });
   app.get('/api/auth/csrf', auth.csrf);
   app.post('/api/auth/register', authLimiter, requireCsrf, auth.register);

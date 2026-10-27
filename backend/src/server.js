@@ -15,5 +15,5 @@ if (process.env.NODE_ENV === 'production' && (!process.env.MONGODB_URI || !proce
 connectDatabase().then((state) => {
   if (state.configured && !state.connected) console.error('MongoDB connection unavailable; portfolio persistence will return a service error.');
   if (!state.configured) console.warn('MONGODB_URI is not configured; portfolio persistence is unavailable.');
-  createApp().listen(port, () => console.log(`Quantara API listening on port ${port}`));
+  createApp().listen(port, '0.0.0.0', () => console.log(`Quantara API listening on port ${port}`));
 });

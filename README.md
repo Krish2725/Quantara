@@ -46,6 +46,8 @@ Without a key, the app shows setup instructions and does not substitute prices. 
 
 The adapter calls Twelve Data's symbol search, quote and daily time-series endpoints. It uses the exchange MIC from the selected listing for quote/history requests, displays provider timestamps and currency, applies an 8-second timeout, and maps missing configuration, provider authorization/access, rate limiting, missing symbols and invalid responses to clear API errors. Results are cached server-side in memory (search 5 minutes, quote 1 minute, daily history 6 hours) and matching in-flight requests are deduplicated. Cache is lost when the backend restarts.
 
+Market-data routes are public for the dashboard's pre-transaction instrument lookup and ticker; requests share an in-memory limit of 60 per client IP per 15 minutes. This limits accidental or abusive provider-quota use but is not a distributed quota system. Behind a trusted reverse proxy, configure `TRUST_PROXY=1` so client addresses are identified correctly.
+
 Twelve Data plan entitlements change what is available and whether internal display is permitted. Consult [Twelve Data pricing](https://twelvedata.com/pricing), [API documentation](https://twelvedata.com/docs), and its [exchange coverage listing](https://twelvedata.com/exchanges?country=India) before use. The free Basic plan has limited credits and display rights; exchange availability and latency vary by plan. The app does not claim real-time coverage for every exchange. A 429 response is surfaced instead of retried endlessly. Do not assume a key provides a particular exchange or display entitlement.
 
 ## Using the tracker
@@ -111,6 +113,10 @@ The transaction ledger is calculated in the browser and validated again by the b
 - FX conversion, short positions, dividends, taxes, deposits/withdrawals, rebalancing and transaction-weighted portfolio return are not implemented. Historical price metrics exclude dividends and do not predict future results.
 - The provider's daily series is split-adjusted according to its API mode. Imported CSV adjustment quality is the user's responsibility.
 - Historical metrics use the existing analytics conventions: annualized mean return is arithmetic, not CAGR; annualization assumes regular observations; short histories can mislead. See the methodology document.
+
+## Deployment status
+
+The production frontend is built to `frontend/dist`. The root `vercel.json` proxies `/api/*` and `/health` to Render and sends remaining SPA routes to `index.html`. Replace `YOUR-RENDER-SERVICE` in both external destinations with the actual Render service hostname before deploying. Leave `VITE_API_BASE_URL` unset for this same-origin proxy; setting it to Render directly bypasses the proxy and makes browser session cookies cross-site. Set the backend `FRONTEND_ORIGIN` to the exact Vercel production origin. Provide production `MONGODB_URI`, a unique `SESSION_SECRET` of at least 32 characters, `NODE_ENV=production`, and `TRUST_PROXY=1` behind Render's proxy. Verify `/health`, registration/login, refresh, logout, and a persisted portfolio through the Vercel domain before sharing it. This repository does not contain the actual Render hostname or verify a live deployment.
 
 ## Verification
 

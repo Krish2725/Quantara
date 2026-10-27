@@ -31,6 +31,19 @@ describe('Quantara API', () => {
     assert.equal(JSON.stringify(body).includes('apiKey'), false);
   });
 
+  it('limits public market-data requests per client', async (t) => {
+    const rateLimitServer = createApp({ marketData: { status: () => ({ configured: false }), search: async () => [] } }).listen(0);
+    await new Promise((resolve) => rateLimitServer.once('listening', resolve));
+    t.after(() => rateLimitServer.close());
+    const rateLimitUrl = `http://127.0.0.1:${rateLimitServer.address().port}`;
+    let response;
+    for (let request = 0; request < 61; request += 1) {
+      response = await fetch(`${rateLimitUrl}/api/market-data/search?q=SYMBOL${request}`);
+    }
+    assert.equal(response.status, 429);
+    assert.equal((await response.json()).error.code, 'RATE_LIMITED');
+  });
+
   it('exposes an isolated trial connection check without inventing prices when credentials are missing', async () => {
     const response = await fetch(`${baseUrl}/api/market-data/test-connection`);
     assert.equal(response.status, 200);
