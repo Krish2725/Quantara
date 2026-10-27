@@ -69,23 +69,23 @@ test('ticker returns multiple independent quotes, preserves missing change and i
   assert.equal(requests.length, 3);
 });
 
-test('default watchlist rotates at most four quote requests per refresh and labels pending symbols', async () => {
+test('initially fetches the full watchlist, then rotates at most four quote requests per refresh', async () => {
   const requested = [];
   const marketData = { status: () => ({ configured: true }), quote: async (instrument) => {
     requested.push(instrument.symbol);
     return { symbol: instrument.symbol, price: 101, previousClose: 100, quoteTimestamp: '2026-10-26T20:00:00Z' };
   } };
   let now = 100_000;
-  const ticker = createTickerService({ marketData, now: () => now, intervalMs: 60_000 });
+  const ticker = createTickerService({ marketData, now: () => now, intervalMs: 60_000, retryAfterMs: 0 });
   const first = await ticker();
-  assert.equal(requested.length, 4);
+  assert.equal(requested.length, 30);
   assert.equal(first.items.length, 30);
-  assert.equal(first.items.filter((item) => item.quoteState === 'available').length, 4);
-  assert.equal(first.items.filter((item) => item.quoteState === 'pending').length, 26);
+  assert.equal(first.items.filter((item) => item.quoteState === 'available').length, 30);
+  assert.equal(first.items.filter((item) => item.quoteState === 'pending').length, 0);
   assert.equal(first.items[0].dailyChange, 1);
   now += 60_001;
   const second = await ticker();
-  assert.equal(requested.length, 8);
-  assert.equal(second.items.filter((item) => item.quoteState === 'available').length, 8);
-  assert.equal(new Set(requested).size, 8);
+  assert.equal(requested.length, 34);
+  assert.equal(second.items.filter((item) => item.quoteState === 'available').length, 30);
+  assert.equal(new Set(requested.slice(30)).size, 4);
 });
