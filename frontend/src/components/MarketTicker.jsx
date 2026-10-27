@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getMarketTicker } from '../services/portfolioApi.js';
 
+export const MARKET_TICKER_POLL_MS = 110_000;
+
 function price(value, currency) {
   if (!Number.isFinite(value)) return 'Price unavailable';
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 2 }).format(value); }
@@ -32,7 +34,7 @@ export default function MarketTicker() {
     const refresh = async () => {
       try { const result = await getMarketTicker(); if (active) { setData(result); setError(''); } }
       catch (e) { if (active) setError(e.message); }
-      if (active) timer = setTimeout(refresh, 90_000);
+      if (active) timer = setTimeout(refresh, MARKET_TICKER_POLL_MS);
     };
     refresh();
     return () => { active = false; clearTimeout(timer); };

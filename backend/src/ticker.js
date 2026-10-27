@@ -1,6 +1,8 @@
 import { DEFAULT_TICKER_SYMBOLS, VERIFIED_WATCHLIST } from './tickerWatchlist.js';
 export { DEFAULT_TICKER_SYMBOLS, VERIFIED_WATCHLIST } from './tickerWatchlist.js';
 
+export const DEFAULT_TICKER_REFRESH_MS = 110_000;
+
 export function getTickerWatchlist(value = process.env.TICKER_SYMBOLS || DEFAULT_TICKER_SYMBOLS.join(',')) {
   const symbols = (Array.isArray(value) ? value : String(value).split(',')).map((symbol) => symbol.trim().toUpperCase()).filter(Boolean);
   const unsupported = [...new Set(symbols.filter((symbol) => !VERIFIED_WATCHLIST[symbol]))];
@@ -20,7 +22,7 @@ export function dailyChangePercent(price, previousClose) {
 
 export function createTickerService({
   marketData, now = () => Date.now(),
-  intervalMs = Math.max(60_000, Number(process.env.TICKER_REFRESH_MS) || 90_000),
+  intervalMs = Math.max(60_000, Number(process.env.TICKER_REFRESH_MS) || DEFAULT_TICKER_REFRESH_MS),
   batchSize = Number(process.env.TICKER_BATCH_SIZE) || 4,
   retryAfterMs = 15 * 60_000,
   watchlist = getTickerWatchlist(),

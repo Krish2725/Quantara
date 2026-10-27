@@ -10,7 +10,7 @@ export const VERIFIED_WATCHLIST = Object.freeze({
   JPM: { symbol: 'JPM', name: 'JPMorgan Chase & Co.', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Financials' },
   AVGO: { symbol: 'AVGO', name: 'Broadcom Inc.', exchange: 'NASDAQ', micCode: 'XNGS', currency: 'USD', sector: 'Technology' },
   LLY: { symbol: 'LLY', name: 'Eli Lilly and Company', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Health Care' },
-  WMT: { symbol: 'WMT', name: 'Walmart Inc.', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Consumer Staples' },
+  WMT: { symbol: 'WMT', name: 'Walmart Inc.', exchange: 'NASDAQ', micCode: 'XNGS', currency: 'USD', sector: 'Consumer Staples' },
   V: { symbol: 'V', name: 'Visa Inc.', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Financials' },
   XOM: { symbol: 'XOM', name: 'Exxon Mobil Corporation', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Energy' },
   MA: { symbol: 'MA', name: 'Mastercard Incorporated', exchange: 'NYSE', micCode: 'XNYS', currency: 'USD', sector: 'Financials' },

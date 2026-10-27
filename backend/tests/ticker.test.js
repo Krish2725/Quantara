@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dailyChangePercent, createTickerService, getTickerWatchlist } from '../src/ticker.js';
+import { dailyChangePercent, createTickerService, getTickerWatchlist, DEFAULT_TICKER_REFRESH_MS } from '../src/ticker.js';
 
 test('daily change requires real finite positive quote and previous close', () => {
   assert.equal(dailyChangePercent(110, 100), 10);
@@ -15,9 +15,18 @@ test('watchlist is configurable and limited to maintained listing identities', (
   const defaults = getTickerWatchlist();
   assert.equal(defaults.length, 30);
   assert.equal(new Set(defaults.map((item) => item.symbol)).size, 30);
+  assert.deepEqual(defaults.find((item) => item.symbol === 'WMT'), {
+    symbol: 'WMT', name: 'Walmart Inc.', exchange: 'NASDAQ', micCode: 'XNGS', currency: 'USD', sector: 'Consumer Staples',
+  });
+  assert.equal(getTickerWatchlist('WMT')[0].micCode, 'XNGS');
   assert.ok(defaults.every((item) => item.name && item.exchange && /^[A-Z0-9]{4}$/.test(item.micCode) && item.currency === 'USD'));
   assert.ok(defaults.some((item) => item.sector === 'Industrials' && item.symbol === 'CAT'));
   for (const sector of ['Technology', 'Financials', 'Health Care', 'Consumer Staples', 'Energy', 'Industrials']) assert.ok(defaults.some((item) => item.sector === sector));
+});
+
+test('default ticker cadence targets a full 30-symbol pass in about 15 minutes', () => {
+  assert.equal(DEFAULT_TICKER_REFRESH_MS, 110_000);
+  assert.equal(Math.ceil(30 / 4) * DEFAULT_TICKER_REFRESH_MS, 14 * 60_000 + 40_000);
 });
 
 test('ticker caches quotes, deduplicates overlapping requests, and retains stale quote after failure', async () => {

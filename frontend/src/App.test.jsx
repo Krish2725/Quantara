@@ -6,7 +6,7 @@ import { AppRoutes } from './App.jsx';
 import { AuthProvider } from './auth/AuthContext.jsx';
 import { MemoryRouter } from 'react-router-dom';
 import TransactionTracker, { AddInvestment, Transactions } from './components/TransactionTracker.jsx';
-import MarketTicker, { TickerStrip } from './components/MarketTicker.jsx';
+import MarketTicker, { MARKET_TICKER_POLL_MS, TickerStrip } from './components/MarketTicker.jsx';
 import PublicLanding from './components/PublicLanding.jsx';
 import { ThemeProvider } from './theme/ThemeContext.jsx';
 
@@ -39,6 +39,10 @@ describe('transaction-based dashboard', () => {
     expect(markup).toContain('MARKET WATCH');
     expect(markup).toContain('Loading market quotes');
     expect(markup).toContain('tabindex="0"');
+  });
+
+  it('polls the rotating ticker on the 110-second provider refresh cadence', () => {
+    expect(MARKET_TICKER_POLL_MS).toBe(110_000);
   });
   it('renders multiple ticker symbols independently and repeats them for the seamless cycle', () => {
     const markup = renderToStaticMarkup(<TickerStrip items={[
