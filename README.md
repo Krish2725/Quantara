@@ -1,72 +1,97 @@
 # Quantara
 
-Quantara is a browser-based, transaction-ledger investment tracker with a Twelve Data market-data adapter and the existing historical analytics API. Buy and sell transactions are the source of truth. Historical market prices and current quotes come from the configured provider or an explicitly labeled synthetic demo. The product does not fabricate missing market data or provide investment advice.
+**A transaction-based investment tracker with clear portfolio accounting and historical risk analytics.**
 
-## Features
+Quantara helps self-directed investors keep their stock trades, holdings, cost basis, and market information in one place. It separates actual BUY/SELL records from market-price data, so an execution price is never mistaken for a historical close or live quote.
 
-- Search instruments by ticker or company name and select the exact exchange, MIC and quote currency.
-- Record dated BUY/SELL transactions with quantity, execution price and fees. Overselling is rejected.
-- Preview and import Excel-exported investment transaction CSVs into the same authenticated append-only ledger. Imported BUY/SELL rows use the normal holdings and weighted-average accounting pipeline and are marked as imports.
-- Calculate weighted-average cost basis: purchase fees are capitalized; sale fees reduce net sale proceeds; partial sale basis is removed proportionally.
-- Show remaining quantity, cost basis, average cost, quote timestamp/source, market value, realized and unrealized P/L, total P/L and available daily change.
-- Persist portfolio settings and transactions through the Express API to MongoDB. A local browser backup supports recovery and one-time migration.
-- Show an animated, rotating 30-symbol S&P 500 watchlist with provider price, absolute/percentage change, freshness, and per-symbol unavailable/stale states.
-- Fetch split-adjusted historical prices through the provider for actual open holdings; provider-unavailable states remain explicit.
-- Inspect individual instrument price histories and calculate historical risk metrics through the existing analytics API. These are not transaction-weighted portfolio returns.
-- Load an explicitly synthetic demo to explore the dashboard without a provider key.
+**Live app:** [quantara-lime.vercel.app](https://quantara-lime.vercel.app)
 
-## Requirements and startup
+**Backend health:** [quantara-lime.vercel.app/health](https://quantara-lime.vercel.app/health)
 
-Install dependencies at the repository root:
+## The problem
+
+Investors often piece together a portfolio from brokerage records, spreadsheets, market sites, and separate calculators. That makes it harder to reconcile trades with current holdings, understand how profit and loss were derived, and interpret historical risk. Quantara brings these workflows together while keeping the underlying transactions inspectable and the analytics assumptions explicit.
+
+## Who it is for
+
+Quantara is designed for individual, self-directed investors who want to record a long-only stock portfolio, review transaction-derived holdings and profit/loss, and inspect historical prices and risk measures. It is a tracking and learning tool—not a brokerage, tax service, or source of investment advice.
+
+## What you can do
+
+- Create an account and keep a portfolio scoped to your authenticated account.
+- Search for an instrument and select its listing, exchange, MIC, and quote currency.
+- Record dated BUY and SELL transactions; reject sales that exceed the available quantity.
+- Import past investment transactions from CSV after previewing the rows and validating the complete batch.
+- Review holdings, weighted-average cost basis, realized and unrealized P/L, market value, and quote freshness.
+- View provider-supplied split-adjusted historical prices and instrument-level risk analysis.
+- Compare several instruments on the Overview chart using indexed performance, distinct from actual price charts.
+- Explore an explicitly labeled synthetic demo when live provider data is unavailable.
+- Inspect a rotating market watchlist with explicit pending, stale, and unavailable quote states.
+
+## How it works
+
+```text
+React + Vite frontend
+        │ same-origin /api requests
+        ▼
+Vercel rewrites ──► Express API on Render
+                          ├── MongoDB: users, sessions, portfolios
+                          └── Twelve Data: quotes, search, price history
+
+Shared analytics package: transaction accounting and historical metrics
+```
+
+The frontend presents the app and validates user input. The Express backend handles authentication, authorization, provider requests, and persistence. MongoDB stores the authenticated user's portfolio and server-side session. The shared `analytics/` package contains deterministic financial calculations used by the application and backend.
+
+## Run locally
+
+### Requirements
+
+- Node.js 20 or later with npm
+- MongoDB running locally or a MongoDB Atlas database
+- A Twelve Data API key is optional; live search, quotes, and price history depend on the key's plan and exchange access
+
+### Install and configure
+
+Run from the repository root:
 
 ```bash
 npm install
 ```
 
-Copy `.env.example` to `backend/.env`, set `MONGODB_URI` and optionally `TWELVE_DATA_API_KEY`, then start the backend and frontend in separate terminals:
+Copy the root `.env.example` file to `backend/.env`. Set a local MongoDB connection string and a unique session secret of at least 32 characters. Add a Twelve Data key only if needed. Keep secrets in the backend environment; never expose them through `VITE_` variables or commit `.env` files.
+
+Example local configuration:
+
+```dotenv
+MONGODB_URI=mongodb://127.0.0.1:27017/quantara
+SESSION_SECRET=replace_with_a_unique_random_secret_at_least_32_characters
+FRONTEND_ORIGIN=http://127.0.0.1:5173,http://localhost:5173
+TRUST_PROXY=0
+TWELVE_DATA_API_KEY=your_key_if_available
+```
+
+Start the services in separate terminals from the repository root:
 
 ```bash
 npm run dev:backend
 npm run dev:frontend
 ```
 
-The frontend normally runs at `http://127.0.0.1:5173`; the API listens on port 3000. The Vite development proxy forwards `/api` requests to the backend. `TWELVE_DATA_API_KEY` is read only by the backend; never use a `VITE_` prefix for provider credentials. Restart the backend after changing `backend/.env`.
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The Vite development server proxies API requests to the backend on port 3000. `GET /health` reports service and database connection status without exposing credentials.
 
-The maintained watchlist lives in `backend/src/tickerWatchlist.js`; `TICKER_SYMBOLS` can reduce or reorder it, but cannot introduce unlisted identities. The ticker attempts at most four symbols per 90-second refresh, keeps per-symbol cached results, and rotates through the configured list. Thus a full cycle takes about 12 minutes at default settings, before provider failures or cooldowns. Provider entitlements are account-specific; unavailable symbols remain explicitly unavailable. Twelve Data charges credits per symbol even when using its batch interface, so batching does not make 30-symbol refreshes free. See [S&P Dow Jones Indices](https://www.spglobal.com/spdji/en/indices/equity/sp-500/) for constituent reference and [Twelve Data batch request credit behavior](https://support.twelvedata.com/en/articles/5203360-batch-api-requests).
+## Use the application
 
-For local persistence, install MongoDB Community Server and use `MONGODB_URI=mongodb://127.0.0.1:27017/quantara`. For MongoDB Atlas, create a database user and network access rule, then set `MONGODB_URI` to the Atlas connection string in `backend/.env`. Never commit `.env` or place credentials in frontend variables. `GET /health` reports whether a URI is configured and whether Mongoose is connected, without returning the URI. Without a reachable database, the API remains available for analytics and market data but portfolio loads/saves return an error; it does not claim a successful save.
+1. Register or sign in. Dashboard routes require an authenticated session.
+2. Set the portfolio base currency before recording transactions. FX conversion is not implemented, so transactions must use that currency.
+3. Add an investment to create a BUY, or use Transactions to record a BUY or SELL. Select the exact instrument listing and enter the actual trade date, quantity, execution price, and fees.
+4. Review holdings and accounting on Investments and Transactions. Trade rows are append-only in the UI; corrections should be recorded as offsetting transactions.
+5. To import past trades, open **Transactions → Import Investment Transactions**. Review the preview and validation results before confirming the whole batch.
+6. Use Overview for portfolio summaries and multi-instrument indexed comparison. Use Risk Analysis for one instrument's actual historical prices and drawdown/risk metrics.
 
-Quantara uses MongoDB-backed server sessions and per-account portfolio ownership. Set `SESSION_SECRET` to a unique random secret (at least 32 characters), `MONGODB_URI` to the database, and `FRONTEND_ORIGIN` to the exact comma-separated frontend origins. `TRUST_PROXY=1` should only be enabled behind a trusted reverse proxy. The session cookie is HTTP-only, SameSite=Lax, Secure in production, and expires after 14 days. State-changing auth and portfolio requests require a CSRF token.
+### Transaction CSV
 
-On first login, any existing valid browser ledger is offered for explicit import only if the account has no portfolio. Existing browser-key Mongo records are not assigned to an account; they remain inaccessible through the API. If server portfolio data already exists, it is loaded and the browser copy is retained as `quantara.transaction-ledger.backup.v1`; the app does not merge conflicting portfolios. The browser ledger remains a recoverable backup after successful saves. Synthetic demo transactions are not persisted.
-
-Without a key, the app shows setup instructions and does not substitute prices. Users may still explore the clearly labeled illustrative demo. Search, live quotes and provider history require a configured key and the correct Twelve Data plan and exchange entitlement.
-
-## Provider behavior and plan limits
-
-The adapter calls Twelve Data's symbol search, quote and daily time-series endpoints. It uses the exchange MIC from the selected listing for quote/history requests, displays provider timestamps and currency, applies an 8-second timeout, and maps missing configuration, provider authorization/access, rate limiting, missing symbols and invalid responses to clear API errors. Results are cached server-side in memory (search 5 minutes, quote 1 minute, daily history 6 hours) and matching in-flight requests are deduplicated. Cache is lost when the backend restarts.
-
-Market-data routes are public for the dashboard's pre-transaction instrument lookup and ticker; requests share an in-memory limit of 60 per client IP per 15 minutes. This limits accidental or abusive provider-quota use but is not a distributed quota system. Behind a trusted reverse proxy, configure `TRUST_PROXY=1` so client addresses are identified correctly.
-
-Twelve Data plan entitlements change what is available and whether internal display is permitted. Consult [Twelve Data pricing](https://twelvedata.com/pricing), [API documentation](https://twelvedata.com/docs), and its [exchange coverage listing](https://twelvedata.com/exchanges?country=India) before use. The free Basic plan has limited credits and display rights; exchange availability and latency vary by plan. The app does not claim real-time coverage for every exchange. A 429 response is surfaced instead of retried endlessly. Do not assume a key provides a particular exchange or display entitlement.
-
-## Using the tracker
-
-1. Register or sign in. Unauthenticated visitors are sent to the login page. Signing out destroys the server session.
-2. If offered, choose “Import local portfolio” to copy the existing browser ledger to the signed-in account. The original browser copy is retained; import is never automatic.
-3. Select the portfolio base currency before adding the first transaction. FX conversion is not implemented, so all transactions must use that currency.
-4. Choose **Add investment** to record a BUY only. Use **Transactions → Add transaction** for BUY or SELL. A sale must use an existing open holding and cannot exceed its available quantity.
-5. Search an instrument and choose its exact listing. If the provider is not configured, enter ticker, exchange, MIC and currency manually. Record the actual execution date, quantity, unit price and fees; the quote is only a convenience and is not automatically treated as an executed trade.
-6. Use Investments to review holdings, cost basis, quotes and P/L. Use Transactions to review the append-only ledger and realized P/L.
-7. On Transactions, use **Import Investment Transactions** for actual past trades. Upload `date,symbol,type,quantity,price,fees` (fees optional), inspect the full preview and confirm. Common aliases such as `ticker`, `side`, `qty`, `unit_price` and `commission` are accepted. Dates may be strict `YYYY-MM-DD` or `DD-MM-YYYY`. Every symbol must resolve to one stock listing; new/ambiguous symbols require selecting an exact provider-verified listing. The whole batch is rejected if a row is invalid or sells exceed shares available at that point in chronological order. The authenticated endpoint validates the whole ledger again and atomically stores rows with their idempotency record in one MongoDB portfolio document.
-8. Use Overview, Investments, Transactions and Risk Analysis to inspect the same persisted, transaction-derived holdings. Historical price charts use provider history only. Legacy user-supplied history fields from prior versions are retained in account settings for compatibility, but are ignored by charts, valuations, risk calculations and portfolio scoring. No transaction or legacy setting is silently removed.
-9. The Portfolio Health estimate and stock ratings are descriptive rules over open transaction-derived positions. Missing quotes or history remain unavailable and are not counted as zero risk.
-
-Trades are append-only in the UI. A correction should be recorded as an offsetting transaction. The MongoDB portfolio is authoritative; a user-scoped local copy is retained as a recoverable backup. Clearing browser data removes only that local backup, not the MongoDB portfolio.
-
-## CSV format
-
-### Investment transaction import
+The importer accepts a header row with these required columns: `date,symbol,type,quantity,price`. `fees` is optional and defaults to zero.
 
 ```csv
 date,symbol,type,quantity,price,fees
@@ -75,52 +100,82 @@ date,symbol,type,quantity,price,fees
 2026-09-15,NVDA,SELL,3,165.00,1.00
 ```
 
-Required canonical columns are `date,symbol,type,quantity,price`; `fees` is optional and defaults to zero. Header matching ignores case and surrounding whitespace and supports documented common aliases. Dates support strict `YYYY-MM-DD` and `DD-MM-YYYY`, normalized to ISO. Rows preserve CSV order for same-day execution. An atomic batch must contain 1–500 fully valid rows. Before confirmation the client previews row errors, quantities, gross values and cash effect; the server independently verifies listing identity and runs the combined chronological ledger through the existing long-only validation and accounting rules. No database write happens for invalid rows or an invalid SELL sequence. New symbols require an exact listing selected from provider search. Imported transactions are stored as ordinary ledger entries with source/batch/CSV-row metadata. A UUID import id and canonical content hash are persisted alongside them in the same MongoDB portfolio document, so retrying identical content returns the prior result without duplication and changed content under that id conflicts. The single-document compare-and-set write makes the ledger append and idempotency record atomic; normal portfolio saves also merge concurrent append-only transaction rows. No multi-document transaction is required.
+Dates may use strict `YYYY-MM-DD` or `DD-MM-YYYY` format. The importer validates the complete batch, instrument identity, positive values, and the chronological long-only ledger before saving. Invalid batches are rejected atomically. These rows represent actual trades; their prices are execution prices, not historical market closes.
 
-Investment transaction rows represent actual trades. Execution prices in this file are not historical market closes.
+The former `date,symbol,price` historical-price CSV upload is retired. Legacy account fields are retained for compatibility but are not used as quote or chart data. Historical charts use provider history.
 
-Legacy historical-price CSV upload is retired. Prior account config fields are preserved opaquely and never consumed as quotes or price history. Historical chart data comes from the Twelve Data provider; no replacement, deletion, or automatic migration of legacy records is performed.
+## Portfolio accounting
 
-## Architecture and API
+For each instrument, the ledger applies BUY and SELL transactions in chronological order using weighted-average cost:
 
-- `analytics/`: shared transaction-derived holdings/valuation math, historical performance, portfolio comparison, and deterministic explainable health/rating calculations used by backend and frontend.
-- `backend/`: Express authentication and analytics routes, MongoDB sessions, user model, Twelve Data adapter, cached market ticker, and per-user Mongoose portfolio persistence.
-- `frontend/`: React + Vite authentication routes, protected transaction ledger, server persistence client with recoverable local backup, provider API client and CSV validation.
-- `docs/ANALYTICS_METHODOLOGY.md`: analytics formulas and conventions.
+- BUY basis increases by `quantity × execution price + buy fees`.
+- SELL basis removed is the fraction of current basis corresponding to shares sold.
+- Realized P/L is `quantity × sale price − sell fees − basis removed`.
+- Unrealized P/L is current provider-quoted value minus remaining cost basis.
 
-Endpoints:
+The MongoDB portfolio is authoritative. A recoverable browser copy is retained locally, but it does not replace server persistence. Portfolio and session records are scoped to the authenticated user. Importing a transaction batch creates ledger transactions; it is not the historical-price import feature.
 
-- `GET /health`
-- `GET /api/auth/csrf`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
-- `GET /api/portfolio` and `PUT /api/portfolio` require an authenticated session; writes require the CSRF header.
-- `GET /api/portfolio` includes a canonical ledger-derived summary; imported transaction writes return the same summary with the persisted ledger.
-- `GET /api/market-data/status`
-- `GET /api/market-data/ticker` (cached rotating 30-symbol watchlist; independent quote results/errors and partial-availability states)
-- `GET /api/market-data/test-connection` checks the documented Basic trial symbol AAPL on NASDAQ (`XNGS`) without changing portfolio data.
-- `GET /api/market-data/search?q=...`
-- `GET /api/market-data/quote?symbol=...&micCode=...`
-- `GET /api/market-data/history?symbol=...&micCode=...`
-- `POST /api/portfolio-analysis` for a numeric value series.
-- `POST /api/portfolio-comparison` for the pre-existing dated buy-and-hold analysis contract.
+## Historical analytics and assumptions
 
-The transaction ledger is calculated in the browser and validated again by the backend before persistence. Portfolio health uses the same exported `@quantara/analytics` function in the app, with actual open holdings, provider quotes, and provider histories. It uses no separate guessed server-side metrics. The ticker watchlist identities are maintained centrally; account plan coverage is not guaranteed and prices are never fabricated. Daily change is unavailable if the provider omits previous close. The refresh interval defaults to 90 seconds (`TICKER_REFRESH_MS` can override it); each refresh advances at most four quote requests (`TICKER_BATCH_SIZE`, capped at four). Quote cache and ticker rotation/stale data are in-memory and reset on backend restart.
+Risk Analysis uses a selected instrument's provider-supplied daily, split-adjusted price history. The chart displays actual prices; the Overview comparison chart separately indexes each series to a starting value of 100. Split-adjusted prices without dividends measure **price-only returns**, not total investment returns and not transaction-weighted portfolio performance.
 
-## Accounting conventions and limitations
+Daily analytics use 252 observations per year by default. Arithmetic annualized return is the mean daily simple return multiplied by 252; it is not CAGR. Volatility uses sample standard deviation annualized by `√252`. Sharpe uses daily excess returns and the configured annual risk-free rate. Maximum drawdown is calculated from the running historical peak. Irregular date gaps count as one observation interval; missing observations are not interpolated. See [docs/ANALYTICS_METHODOLOGY.md](docs/ANALYTICS_METHODOLOGY.md) for formulas, validation rules, edge cases, and limitations.
 
-- The tracker is long-only and rejects a sell larger than the available quantity.
-- Weighted-average basis includes buy fees. Selling removes the same proportion of current average basis as shares sold. Realized P/L is quantity × execution price minus sell fees minus basis removed.
-- Open unrealized P/L is provider-quote market value minus remaining basis. Imported CSV history is never used for current valuation, quote display, or P/L. Portfolio totals require every open holding to have a provider quote in the base currency.
-- FX conversion, short positions, dividends, taxes, deposits/withdrawals, rebalancing and transaction-weighted portfolio return are not implemented. Historical price metrics exclude dividends and do not predict future results.
-- The provider's daily series is split-adjusted according to its API mode. Imported CSV adjustment quality is the user's responsibility.
-- Historical metrics use the existing analytics conventions: annualized mean return is arithmetic, not CAGR; annualization assumes regular observations; short histories can mislead. See the methodology document.
+Historical price metrics are backward-looking and depend on data coverage. They do not predict future performance or provide investment recommendations. Provider quote coverage, update delay, exchange access, and display entitlements depend on the Twelve Data plan. Quantara does not invent missing quotes or history.
 
-## Deployment status
+## Security and data handling
 
-The production frontend is built to `frontend/dist`. The root `vercel.json` proxies `/api/*` and `/health` to Render and sends remaining SPA routes to `index.html`. Replace `YOUR-RENDER-SERVICE` in both external destinations with the actual Render service hostname before deploying. Leave `VITE_API_BASE_URL` unset for this same-origin proxy; setting it to Render directly bypasses the proxy and makes browser session cookies cross-site. Set the backend `FRONTEND_ORIGIN` to the exact Vercel production origin. Provide production `MONGODB_URI`, a unique `SESSION_SECRET` of at least 32 characters, `NODE_ENV=production`, and `TRUST_PROXY=1` behind Render's proxy. Verify `/health`, registration/login, refresh, logout, and a persisted portfolio through the Vercel domain before sharing it. This repository does not contain the actual Render hostname or verify a live deployment.
+- Passwords are hashed; authenticated requests use server-side sessions stored in MongoDB.
+- Session cookies are HTTP-only, SameSite=Lax, and Secure in production.
+- State-changing authentication and portfolio requests require a CSRF token.
+- Portfolio endpoints enforce authenticated user ownership.
+- Production deployment requires `MONGODB_URI`, `SESSION_SECRET` (at least 32 characters), `FRONTEND_ORIGIN`, `NODE_ENV=production`, and `TRUST_PROXY=1` behind Render's proxy. `TWELVE_DATA_API_KEY` is optional for live market data.
+- Do not commit secrets, share API keys, or place backend credentials in frontend build variables.
 
-## Verification
+## Production deployment
+
+The frontend is deployed on Vercel at [https://quantara-lime.vercel.app](https://quantara-lime.vercel.app). The backend service is [https://quantara-mepr.onrender.com](https://quantara-mepr.onrender.com). The Vercel configuration in [`vercel.json`](vercel.json) forwards `/api/*` and `/health` to Render and routes the remaining paths to the frontend application.
+
+Vercel builds from the repository root with:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `.` (repository root) |
+| Install Command | `npm ci` |
+| Build Command | `npm --workspace=quantara-frontend run build` |
+| Output Directory | `frontend/dist` |
+| `VITE_API_BASE_URL` | Leave unset; API calls use the Vercel same-origin rewrites |
+
+Configure the backend environment variables in Render. Set `FRONTEND_ORIGIN` to `https://quantara-lime.vercel.app` (no trailing slash). Set `TRUST_PROXY=1` and `NODE_ENV=production`. Add the production MongoDB URI and a unique session secret; add the Twelve Data key if live market data is desired. Do not put backend secrets in Vercel frontend variables.
+
+Health check: [https://quantara-lime.vercel.app/health](https://quantara-lime.vercel.app/health). After changing deployment settings, verify health, registration/login, refresh, logout, and that a saved portfolio reloads through the Vercel domain.
+
+## Project structure
+
+```text
+analytics/   Shared deterministic portfolio and risk calculations
+backend/     Express API, authentication, MongoDB, and market-data adapter
+frontend/    React application, routes, charts, and transaction workflows
+docs/        Analytics methodology and supporting documentation
+vercel.json  Production frontend routing and backend rewrites
+```
+
+## Tests and production build
+
+Run the analytics, backend, and frontend test suites from the repository root:
 
 ```bash
 npm test
+```
+
+Build the frontend for production:
+
+```bash
 npm --workspace=quantara-frontend run build
+```
+
+The backend has a separate production start command for deployment:
+
+```bash
+npm start --workspace=quantara-backend
 ```
