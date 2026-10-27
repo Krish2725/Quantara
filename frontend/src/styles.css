@@ -54,7 +54,7 @@ button, a, input, select { -webkit-tap-highlight-color: transparent; }
 .metric-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: #f2f6f4; color: #56816f; font-size: 15px; }
 .metric-icon-positive { background: #e7f4ed; color: #37805f; }
 .metric-icon-negative { background: #fff0ed; color: #bd655a; }
-.section-title { color: #17212e; font-size: 14px; font-weight: 700; letter-spacing: -.025em; }
+.section-title { color: var(--q-ink); font-size: 14px; font-weight: 700; letter-spacing: -.025em; }
 .period-chip, .as-of-chip, .method-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 8px; font-size: 9px; font-weight: 600; white-space: nowrap; }
 .period-chip { background: #f0f5f3; color: #5e796d; }
 .as-of-chip { background: #f5f7f9; color: #697585; }
