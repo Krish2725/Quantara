@@ -1,0 +1,28 @@
+{
+  "name": "@quantara/analytics",
+  "version": "0.1.0",
+  "description": "Pure JavaScript financial mathematics & portfolio risk calculation engine for Quantara",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "portfolio-analytics",
+    "financial-math",
+    "sharpe-ratio",
+    "drawdown",
+    "volatility"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.2.7",
+    "vitest": "^3.0.0"
+  }
+}

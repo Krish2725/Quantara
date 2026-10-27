@@ -1,0 +1,33 @@
+{
+  "name": "quantara",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quantara - Institutional-Grade Portfolio Analytics & Risk Intelligence Platform",
+  "type": "module",
+  "workspaces": [
+    "analytics",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm run dev --workspace=quantara-backend\" \"npm run dev --workspace=quantara-frontend\"",
+    "dev:backend": "npm run dev --workspace=quantara-backend",
+    "dev:frontend": "npm run dev --workspace=quantara-frontend",
+    "test": "npm --workspace=@quantara/analytics test && npm --workspace=quantara-backend test && npm --workspace=quantara-frontend test",
+    "test:coverage": "npm --workspace=@quantara/analytics run test:coverage",
+    "test:frontend": "npm --workspace=quantara-frontend test"
+  },
+  "keywords": [
+    "portfolio-analytics",
+    "risk-intelligence",
+    "fintech",
+    "sharpe-ratio",
+    "drawdown",
+    "volatility"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

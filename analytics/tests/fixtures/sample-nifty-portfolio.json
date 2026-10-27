@@ -1,0 +1,68 @@
+{
+  "portfolioName": "Quantara Core Indian Equity Portfolio",
+  "baseCurrency": "INR",
+  "initialCash": 50000,
+  "holdings": [
+    { "assetId": "RELIANCE", "symbol": "RELIANCE.NS", "quantity": 100 },
+    { "assetId": "TCS", "symbol": "TCS.NS", "quantity": 60 },
+    { "assetId": "HDFCBANK", "symbol": "HDFCBANK.NS", "quantity": 150 },
+    { "assetId": "INFY", "symbol": "INFY.NS", "quantity": 120 },
+    { "assetId": "ICICIBANK", "symbol": "ICICIBANK.NS", "quantity": 140 }
+  ],
+  "benchmark": {
+    "symbol": "^NSEI",
+    "name": "Nifty 50"
+  },
+  "history": [
+    {
+      "date": "2024-01-01",
+      "benchmarkClose": 21741.90,
+      "prices": { "RELIANCE": 2580.00, "TCS": 3810.00, "HDFCBANK": 1700.00, "INFY": 1545.00, "ICICIBANK": 995.00 }
+    },
+    {
+      "date": "2024-01-02",
+      "benchmarkClose": 21665.80,
+      "prices": { "RELIANCE": 2595.00, "TCS": 3790.00, "HDFCBANK": 1690.00, "INFY": 1530.00, "ICICIBANK": 990.00 }
+    },
+    {
+      "date": "2024-01-03",
+      "benchmarkClose": 21517.35,
+      "prices": { "RELIANCE": 2570.00, "TCS": 3720.00, "HDFCBANK": 1675.00, "INFY": 1505.00, "ICICIBANK": 980.00 }
+    },
+    {
+      "date": "2024-01-04",
+      "benchmarkClose": 21658.60,
+      "prices": { "RELIANCE": 2598.00, "TCS": 3735.00, "HDFCBANK": 1685.00, "INFY": 1515.00, "ICICIBANK": 992.00 }
+    },
+    {
+      "date": "2024-01-05",
+      "benchmarkClose": 21710.80,
+      "prices": { "RELIANCE": 2610.00, "TCS": 3740.00, "HDFCBANK": 1680.00, "INFY": 1520.00, "ICICIBANK": 998.00 }
+    },
+    {
+      "date": "2024-01-08",
+      "benchmarkClose": 21513.00,
+      "prices": { "RELIANCE": 2585.00, "TCS": 3680.00, "HDFCBANK": 1660.00, "INFY": 1500.00, "ICICIBANK": 985.00 }
+    },
+    {
+      "date": "2024-01-09",
+      "benchmarkClose": 21544.85,
+      "prices": { "RELIANCE": 2590.00, "TCS": 3700.00, "HDFCBANK": 1655.00, "INFY": 1510.00, "ICICIBANK": 988.00 }
+    },
+    {
+      "date": "2024-01-10",
+      "benchmarkClose": 21618.70,
+      "prices": { "RELIANCE": 2650.00, "TCS": 3715.00, "HDFCBANK": 1660.00, "INFY": 1515.00, "ICICIBANK": 994.00 }
+    },
+    {
+      "date": "2024-01-11",
+      "benchmarkClose": 21647.20,
+      "prices": { "RELIANCE": 2715.00, "TCS": 3730.00, "HDFCBANK": 1665.00, "INFY": 1495.00, "ICICIBANK": 998.00 }
+    },
+    {
+      "date": "2024-01-12",
+      "benchmarkClose": 21894.55,
+      "prices": { "RELIANCE": 2740.00, "TCS": 3880.00, "HDFCBANK": 1670.00, "INFY": 1612.00, "ICICIBANK": 1005.00 }
+    }
+  ]
+}
