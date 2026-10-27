@@ -6,6 +6,8 @@ Quantara helps self-directed investors keep their stock trades, holdings, cost b
 
 **Live app:** [quantara-lime.vercel.app](https://quantara-lime.vercel.app)
 
+**Demo video:** [Watch the Quantara demo](https://drive.google.com/file/d/1AClhmZV6PyCGqi5W8_skm-lapDYcEV1W/view?usp=drive_link)
+
 **Backend health:** [quantara-lime.vercel.app/health](https://quantara-lime.vercel.app/health)
 
 ## The problem
