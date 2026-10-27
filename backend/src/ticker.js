@@ -1,7 +1,7 @@
 import { DEFAULT_TICKER_SYMBOLS, VERIFIED_WATCHLIST } from './tickerWatchlist.js';
 export { DEFAULT_TICKER_SYMBOLS, VERIFIED_WATCHLIST } from './tickerWatchlist.js';
 
-export const DEFAULT_TICKER_REFRESH_MS = 110_000;
+export const DEFAULT_TICKER_REFRESH_MS = 90_000;
 
 export function getTickerWatchlist(value = process.env.TICKER_SYMBOLS || DEFAULT_TICKER_SYMBOLS.join(',')) {
   const symbols = (Array.isArray(value) ? value : String(value).split(',')).map((symbol) => symbol.trim().toUpperCase()).filter(Boolean);
@@ -27,7 +27,7 @@ export function createTickerService({
   retryAfterMs = 15 * 60_000,
   watchlist = getTickerWatchlist(),
 } = {}) {
-  let cached = null, expires = 0, pending = null, cursor = 0, initialFillComplete = false;
+  let cached = null, expires = 0, pending = null, cursor = 0;
   const itemsBySymbol = new Map();
   const lastAttempt = new Map();
   const boundedBatchSize = Math.max(1, Math.min(4, Math.floor(batchSize) || 4));
@@ -41,17 +41,11 @@ export function createTickerService({
     }
     pending = (async () => {
       const selected = [];
-      // Warm the whole watchlist on the first dashboard request so a demo is populated immediately.
-      // Subsequent refreshes stay within the four-symbol request cap.
-      if (!initialFillComplete) {
-        watchlist.forEach((instrument, index) => selected.push({ instrument, index }));
-      } else {
-        for (let offset = 0; offset < watchlist.length && selected.length < boundedBatchSize; offset += 1) {
-          const index = (cursor + offset) % watchlist.length;
-          const instrument = watchlist[index];
-          const attemptedAt = lastAttempt.get(instrument.symbol);
-          if (attemptedAt == null || now() - attemptedAt >= retryAfterMs) selected.push({ instrument, index });
-        }
+      for (let offset = 0; offset < watchlist.length && selected.length < boundedBatchSize; offset += 1) {
+        const index = (cursor + offset) % watchlist.length;
+        const instrument = watchlist[index];
+        const attemptedAt = lastAttempt.get(instrument.symbol);
+        if (attemptedAt == null || now() - attemptedAt >= retryAfterMs) selected.push({ instrument, index });
       }
       if (selected.length) cursor = (selected.at(-1).index + 1) % watchlist.length;
       const fetched = await Promise.all(selected.map(async ({ instrument }) => {
@@ -71,7 +65,6 @@ export function createTickerService({
         }
       }));
       const fetchedBySymbol = new Map(fetched.map((item) => [item.symbol, item]));
-      initialFillComplete = true;
       const items = watchlist.map((instrument) => fetchedBySymbol.get(instrument.symbol) || itemsBySymbol.get(instrument.symbol) || {
         ...instrument, price: null, previousClose: null, dailyChange: null, dailyChangePercent: null, quoteTimestamp: null,
         refreshedAt: null, stale: false, error: null, quoteState: 'pending',

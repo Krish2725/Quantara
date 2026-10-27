@@ -26,7 +26,7 @@ Quantara is designed for individual, self-directed investors who want to record 
 - View provider-supplied split-adjusted historical prices and instrument-level risk analysis.
 - Compare several instruments on the Overview chart using indexed performance, distinct from actual price charts.
 - Explore an explicitly labeled synthetic demo when live provider data is unavailable.
-- Inspect a rotating market watchlist with explicit pending, stale, and unavailable quote states. After a backend restart, the first dashboard request fetches the full list so the ticker populates immediately; subsequent frontend polls run every 110 seconds and refresh up to four symbols at a time. A 30-symbol list is revisited about every 14 minutes 40 seconds after warm-up. This initial request makes one provider call per symbol and can encounter provider plan or per-minute limits; unavailable responses remain explicit.
+- Inspect a rotating market watchlist with explicit pending, stale, and unavailable quote states. The frontend polls every 90 seconds and the backend refreshes at most four symbols per poll, rotating through the 30-symbol list in about 12 minutes.
 
 ## How it works
 

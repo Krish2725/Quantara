@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMarketTicker } from '../services/portfolioApi.js';
 
-export const MARKET_TICKER_POLL_MS = 110_000;
+export const MARKET_TICKER_POLL_MS = 90_000;
 
 function price(value, currency) {
   if (!Number.isFinite(value)) return 'Price unavailable';

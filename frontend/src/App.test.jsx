@@ -41,8 +41,8 @@ describe('transaction-based dashboard', () => {
     expect(markup).toContain('tabindex="0"');
   });
 
-  it('polls the rotating ticker on the 110-second provider refresh cadence', () => {
-    expect(MARKET_TICKER_POLL_MS).toBe(110_000);
+  it('polls the rotating ticker on the 90-second provider refresh cadence', () => {
+    expect(MARKET_TICKER_POLL_MS).toBe(90_000);
   });
   it('renders multiple ticker symbols independently and repeats them for the seamless cycle', () => {
     const markup = renderToStaticMarkup(<TickerStrip items={[
